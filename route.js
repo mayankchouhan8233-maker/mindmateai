@@ -6,23 +6,21 @@ export async function POST(req) {
     const { text, voice, ssml } = await req.json();
 
     if (!text || typeof text !== "string") {
-      console.error("[TTS API] Invalid text format", text);
-      return NextResponse.json({ error: "Missing or invalid text" }, { status: 400 });
+      return NextResponse.json({ error: "Missing text" }, { status: 400 });
     }
 
     const apiKey = process.env.OPENAI_API_KEY;
     if (!apiKey) {
-      console.error("[TTS API] Missing OPENAI_API_KEY environment variable");
-      return NextResponse.json({ error: "Server not configured - missing API key" }, { status: 500 });
+      console.error("Missing OPENAI_API_KEY");
+      return NextResponse.json({ error: "Server not configured" }, { status: 500 });
     }
 
-    console.log("[TTS API] Processing text to speech");
     const openai = new OpenAI({ apiKey });
 
     // Use OpenAI TTS model to generate audio
     const createParams = {
-      model: "tts-1",
-      voice: voice || "alloy",
+      model: "gpt-4o-mini-tts",
+      voice: voice || "female",
       input: text,
     };
 
@@ -35,15 +33,14 @@ export async function POST(req) {
 
     const buffer = await response.arrayBuffer();
 
-    console.log("[TTS API] Successfully generated audio");
     return new Response(buffer, {
       headers: {
-        "Content-Type": "audio/mpeg",
-        "Content-Disposition": "inline; filename=voice.mp3",
+        "Content-Type": "audio/wav",
+        "Content-Disposition": "inline; filename=voice.wav",
       },
     });
   } catch (err) {
-    console.error("[TTS API] Error:", err.message);
-    return NextResponse.json({ error: "TTS generation failed: " + err.message }, { status: 500 });
+    console.error("TTS error:", err);
+    return NextResponse.json({ error: "TTS generation failed" }, { status: 500 });
   }
 }
